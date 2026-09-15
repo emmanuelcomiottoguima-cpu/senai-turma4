@@ -27,7 +27,7 @@ programa
     inteiro fim_nivel_1 = 0
     inteiro fim_nivel_2 = 0
 
-    // -------------------- POSIÇÕES SORTEADAS --------------------
+    // -------------------- POSIÇÕES --------------------
 
     inteiro casa_b05 = -1
     inteiro casa_b10 = -1
@@ -49,7 +49,7 @@ programa
         solicitar_percentuais()
         GerarCenario()
         jogar()
-        mostrar_resumo_da_partida()
+        mostrar_resultado_final()
     }
 
     funcao mostrar_introducao()
@@ -64,8 +64,7 @@ programa
     }
 
     /*
-     * Solicita os percentuais até que os valores
-     * informados sejam válidos.
+     * Solicita e valida os percentuais dos níveis.
      */
     funcao solicitar_percentuais()
     {
@@ -119,11 +118,8 @@ programa
     }
 
     /*
-     * Aplica o arredondamento convencional.
-     *
-     * Exemplos:
-     * 6,2 será convertido para 6.
-     * 7,8 será convertido para 8.
+     * Arredondamento convencional:
+     * 6,2 vira 6 e 7,8 vira 8.
      */
     funcao inteiro arredondar_casas(real valor)
     {
@@ -133,7 +129,8 @@ programa
     /*
      * FUNÇÃO OBRIGATÓRIA
      *
-     * Cria o cenário completo do jogo.
+     * Inicializa a matriz, calcula os níveis
+     * e sorteia todos os elementos.
      */
     funcao GerarCenario()
     {
@@ -142,9 +139,6 @@ programa
         sortear_elementos()
     }
 
-    /*
-     * Coloca "---" em todas as 25 casas.
-     */
     funcao inicializar_matriz()
     {
         inteiro linha
@@ -159,10 +153,6 @@ programa
         }
     }
 
-    /*
-     * Calcula os limites e registra o nível
-     * correspondente a cada casa.
-     */
     funcao calcular_niveis()
     {
         inteiro casa
@@ -194,12 +184,9 @@ programa
         }
     }
 
-    /*
-     * Sorteia os dois bônus, o risco e o tesouro.
-     */
     funcao sortear_elementos()
     {
-        // Os bônus podem estar em qualquer nível.
+        // Os bônus podem aparecer em qualquer nível.
 
         casa_b05 = sortear_casa_livre(
             0,
@@ -216,8 +203,7 @@ programa
         colocar_conteudo(casa_b10, "B10")
 
         /*
-         * Risco e tesouro começam após a última
-         * casa pertencente ao Nível I.
+         * Risco e tesouro não podem ficar no Nível I.
          */
 
         casa_risco = sortear_casa_livre(
@@ -236,8 +222,7 @@ programa
     }
 
     /*
-     * Repete o sorteio enquanto a casa
-     * escolhida não estiver vazia.
+     * Repete o sorteio se a posição já estiver ocupada.
      */
     funcao inteiro sortear_casa_livre(
         inteiro primeira_casa,
@@ -259,8 +244,7 @@ programa
     }
 
     /*
-     * Converte o índice da casa para linha
-     * e coluna antes de colocar o conteúdo.
+     * Converte o índice linear para linha e coluna.
      */
     funcao colocar_conteudo(
         inteiro casa,
@@ -276,9 +260,6 @@ programa
         cenario[linha][coluna] = conteudo
     }
 
-    /*
-     * Retorna o conteúdo armazenado na casa.
-     */
     funcao cadeia conteudo_da_casa(inteiro casa)
     {
         inteiro linha
@@ -291,8 +272,7 @@ programa
     }
 
     /*
-     * Executa o percurso sequencial da Casa 01
-     * até o tesouro ou o final da bateria.
+     * Percorre sequencialmente as casas do tabuleiro.
      */
     funcao jogar()
     {
@@ -324,11 +304,13 @@ programa
             )
 
             /*
-             * O custo normal é aplicado antes
-             * de verificar o conteúdo da casa.
+             * Primeiro ocorre o consumo normal da rodada.
              */
             DiminuirBateria()
 
+            /*
+             * Depois do consumo, verifica o conteúdo.
+             */
             conteudo = conteudo_da_casa(casa_atual)
 
             se (conteudo == "B05")
@@ -345,11 +327,6 @@ programa
             {
                 escreva("Casa de risco encontrada!\n")
                 escreva("Penalidade de 3 creditos aplicada.\n")
-
-                /*
-                 * O risco é aplicado depois do
-                 * consumo normal da rodada.
-                 */
                 Risco()
             }
             senao se (conteudo == "$$$")
@@ -386,7 +363,7 @@ programa
     /*
      * FUNÇÃO OBRIGATÓRIA
      *
-     * Desconta 10 créditos da bateria.
+     * Retira 10 créditos da bateria.
      */
     funcao DiminuirBateria()
     {
@@ -396,8 +373,8 @@ programa
     /*
      * FUNÇÃO OBRIGATÓRIA
      *
-     * Recebe o valor do bônus por parâmetro
-     * e o converte em bateria.
+     * Recebe o bônus por parâmetro e adiciona
+     * o valor à bateria e aos créditos obtidos.
      */
     funcao Bonus(inteiro valor_bonus)
     {
@@ -410,7 +387,7 @@ programa
     /*
      * FUNÇÃO OBRIGATÓRIA
      *
-     * Aplica a penalidade de 3 créditos.
+     * Retira 3 créditos depois do custo da rodada.
      */
     funcao Risco()
     {
@@ -418,7 +395,7 @@ programa
     }
 
     /*
-     * Mostra a matriz completa.
+     * Mostra as 25 casas da matriz.
      */
     funcao mostrar_cenario()
     {
@@ -437,8 +414,7 @@ programa
     }
 
     /*
-     * Converte o número do nível em
-     * algarismo romano.
+     * Converte o número do nível em romano.
      */
     funcao cadeia nome_nivel(inteiro numero_nivel)
     {
@@ -457,37 +433,65 @@ programa
     }
 
     /*
-     * Mostra o resumo provisório da partida.
-     *
-     * No Commit 6 será criado o resultado
-     * completo solicitado no enunciado.
+     * Mostra os limites calculados automaticamente.
      */
-    funcao mostrar_resumo_da_partida()
+    funcao mostrar_limites_dos_niveis()
     {
-        escreva("\n\n========== RESUMO DA PARTIDA ==========\n\n")
+        escreva("\nLimites calculados:\n")
+
+        se (fim_nivel_1 > 0)
+        {
+            escreva(
+                "Nivel I: casas 01 ate ",
+                fim_nivel_1,
+                "\n"
+            )
+        }
+        senao
+        {
+            escreva("Nivel I: nenhuma casa\n")
+        }
+
+        se (fim_nivel_2 > fim_nivel_1)
+        {
+            escreva(
+                "Nivel II: casas ",
+                fim_nivel_1 + 1,
+                " ate ",
+                fim_nivel_2,
+                "\n"
+            )
+        }
+        senao
+        {
+            escreva("Nivel II: nenhuma casa\n")
+        }
+
+        se (fim_nivel_2 < TOTAL_CASAS)
+        {
+            escreva(
+                "Nivel III: casas ",
+                fim_nivel_2 + 1,
+                " ate 25\n"
+            )
+        }
+        senao
+        {
+            escreva("Nivel III: nenhuma casa\n")
+        }
+    }
+
+    /*
+     * Apresenta o resultado completo solicitado.
+     */
+    funcao mostrar_resultado_final()
+    {
+        escreva("\n\n========== RESULTADO DO JOGO ==========\n\n")
+
+        mostrar_cenario()
 
         escreva(
-            "Ultima casa visitada: ",
-            ultima_casa_visitada + 1,
-            "\n"
-        )
-
-        escreva(
-            "Nivel atingido: ",
-            nome_nivel(
-                nivel_das_casas[ultima_casa_visitada]
-            ),
-            "\n"
-        )
-
-        escreva(
-            "Quantidade de rodadas: ",
-            quantidade_rodadas,
-            "\n"
-        )
-
-        escreva(
-            "Bateria restante: ",
+            "\nBateria restante: ",
             bateria,
             " creditos\n"
         )
@@ -496,6 +500,14 @@ programa
             "Creditos obtidos: ",
             creditos_obtidos,
             " creditos\n"
+        )
+
+        escreva(
+            "Nivel atingido: ",
+            nome_nivel(
+                nivel_das_casas[ultima_casa_visitada]
+            ),
+            "\n"
         )
 
         se (tesouro_encontrado)
@@ -507,6 +519,31 @@ programa
             escreva("Tesouro encontrado: NAO\n")
         }
 
-        escreva("\n=======================================\n")
+        escreva("\nPosicao do risco:\n")
+        escreva("Casa: ", casa_risco + 1, "\n")
+
+        escreva(
+            "Posicao na matriz: [",
+            casa_risco / COLUNAS,
+            ",",
+            casa_risco % COLUNAS,
+            "]\n"
+        )
+
+        escreva(
+            "\nQuantidade de rodadas: ",
+            quantidade_rodadas,
+            "\n"
+        )
+
+        escreva(
+            "Ultima casa visitada: ",
+            ultima_casa_visitada + 1,
+            "\n"
+        )
+
+        mostrar_limites_dos_niveis()
+
+        escreva("\n========================================\n")
     }
 }
