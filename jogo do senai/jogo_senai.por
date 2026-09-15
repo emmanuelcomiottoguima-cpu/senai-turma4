@@ -9,7 +9,11 @@ programa
     const inteiro COLUNAS = 5
     const inteiro TOTAL_CASAS = 25
 
-    // -------------------- MATRIZ E VETOR --------------------
+    const inteiro BATERIA_INICIAL = 100
+    const inteiro CUSTO_RODADA = 10
+    const inteiro PENALIDADE_RISCO = 3
+
+    // -------------------- CENÁRIO --------------------
 
     cadeia cenario[5][5]
     inteiro nivel_das_casas[25]
@@ -20,15 +24,20 @@ programa
     real percentual_nivel_2 = 0.0
     real percentual_nivel_3 = 0.0
 
-    // Última casa pertencente aos níveis I e II.
     inteiro fim_nivel_1 = 0
     inteiro fim_nivel_2 = 0
 
-    // Posições sorteadas, usando índices entre 0 e 24.
+    // -------------------- POSIÇÕES --------------------
+
     inteiro casa_b05 = -1
     inteiro casa_b10 = -1
     inteiro casa_risco = -1
     inteiro casa_tesouro = -1
+
+    // -------------------- ESTADO DO JOGO --------------------
+
+    inteiro bateria = BATERIA_INICIAL
+    inteiro creditos_obtidos = 0
 
     funcao inicio()
     {
@@ -38,6 +47,7 @@ programa
         mostrar_cenario()
         mostrar_limites_dos_niveis()
         mostrar_posicoes_sorteadas()
+        testar_bateria()
     }
 
     funcao mostrar_introducao()
@@ -45,12 +55,11 @@ programa
         escreva("========================================\n")
         escreva("          JOGO CACA AO TESOURO          \n")
         escreva("========================================\n")
-        escreva("O tabuleiro possui 25 casas (5 x 5).\n\n")
+        escreva("O tabuleiro possui 25 casas (5 x 5).\n")
+        escreva("Bateria inicial: ", BATERIA_INICIAL, " creditos.\n")
+        escreva("Custo de cada rodada: ", CUSTO_RODADA, " creditos.\n\n")
     }
 
-    /*
-     * Solicita e valida os percentuais.
-     */
     funcao solicitar_percentuais()
     {
         logico percentuais_validos = falso
@@ -75,8 +84,7 @@ programa
                 percentual_nivel_2 < 0.0 ou
                 percentual_nivel_3 < 0.0)
             {
-                escreva("\nValores invalidos!\n")
-                escreva("Os percentuais nao podem ser negativos.\n\n")
+                escreva("\nOs percentuais nao podem ser negativos.\n\n")
             }
             senao se (soma_percentuais != 100.0)
             {
@@ -102,10 +110,6 @@ programa
         }
     }
 
-    /*
-     * Arredondamento convencional:
-     * 6,2 vira 6 e 7,8 vira 8.
-     */
     funcao inteiro arredondar_casas(real valor)
     {
         retorne tipos.real_para_inteiro(valor + 0.5)
@@ -114,12 +118,8 @@ programa
     /*
      * FUNÇÃO OBRIGATÓRIA
      *
-     * Responsável por:
-     * 1. inicializar a matriz;
-     * 2. calcular os limites dos níveis;
-     * 3. atribuir um nível para cada casa;
-     * 4. sortear os elementos;
-     * 5. impedir sobreposição.
+     * Inicializa a matriz, calcula os níveis
+     * e sorteia os elementos.
      */
     funcao GerarCenario()
     {
@@ -128,9 +128,6 @@ programa
         sortear_elementos()
     }
 
-    /*
-     * Preenche todas as 25 casas com "---".
-     */
     funcao inicializar_matriz()
     {
         inteiro linha
@@ -145,10 +142,6 @@ programa
         }
     }
 
-    /*
-     * Calcula os limites acumulados dos níveis
-     * e registra o nível de cada casa.
-     */
     funcao calcular_niveis()
     {
         inteiro casa
@@ -180,30 +173,14 @@ programa
         }
     }
 
-    /*
-     * Sorteia e posiciona os quatro elementos.
-     *
-     * Os bônus podem ficar em qualquer nível.
-     * O risco e o tesouro começam depois do Nível I.
-     */
     funcao sortear_elementos()
     {
-        // Bônus de 5 créditos: qualquer uma das 25 casas.
         casa_b05 = sortear_casa_livre(0, TOTAL_CASAS - 1)
         colocar_conteudo(casa_b05, "B05")
 
-        // Bônus de 10 créditos: qualquer casa ainda livre.
         casa_b10 = sortear_casa_livre(0, TOTAL_CASAS - 1)
         colocar_conteudo(casa_b10, "B10")
 
-        /*
-         * O primeiro índice disponível depois do Nível I
-         * é exatamente o valor armazenado em fim_nivel_1.
-         *
-         * Exemplo:
-         * Se o Nível I possui 6 casas, ele usa os índices
-         * 0 até 5. O sorteio começa no índice 6.
-         */
         casa_risco = sortear_casa_livre(
             fim_nivel_1,
             TOTAL_CASAS - 1
@@ -219,12 +196,6 @@ programa
         colocar_conteudo(casa_tesouro, "$$$")
     }
 
-    /*
-     * Sorteia uma casa dentro do intervalo recebido.
-     *
-     * Se a posição já estiver ocupada, o sorteio
-     * será repetido até encontrar uma casa vazia.
-     */
     funcao inteiro sortear_casa_livre(
         inteiro primeira_casa,
         inteiro ultima_casa
@@ -244,10 +215,6 @@ programa
         retorne casa_sorteada
     }
 
-    /*
-     * Recebe um índice entre 0 e 24 e coloca
-     * o conteúdo na linha e coluna correspondentes.
-     */
     funcao colocar_conteudo(inteiro casa, cadeia conteudo)
     {
         inteiro linha
@@ -259,9 +226,6 @@ programa
         cenario[linha][coluna] = conteudo
     }
 
-    /*
-     * Retorna o conteúdo de uma casa.
-     */
     funcao cadeia conteudo_da_casa(inteiro casa)
     {
         inteiro linha
@@ -274,11 +238,69 @@ programa
     }
 
     /*
-     * Mostra o cenário completo.
+     * FUNÇÃO OBRIGATÓRIA
      *
-     * Nesta etapa ele é mostrado imediatamente
-     * para facilitar o teste dos sorteios.
+     * Retira 10 créditos da bateria.
+     * Essa função será chamada uma vez por rodada.
      */
+    funcao DiminuirBateria()
+    {
+        bateria = bateria - CUSTO_RODADA
+    }
+
+    /*
+     * FUNÇÃO OBRIGATÓRIA
+     *
+     * Recebe o valor do bônus por parâmetro.
+     * O valor é adicionado à bateria e ao total
+     * de créditos obtidos pelo jogador.
+     */
+    funcao Bonus(inteiro valor_bonus)
+    {
+        bateria = bateria + valor_bonus
+        creditos_obtidos = creditos_obtidos + valor_bonus
+    }
+
+    /*
+     * FUNÇÃO OBRIGATÓRIA
+     *
+     * Retira 3 créditos da bateria.
+     * Essa penalidade será aplicada depois
+     * do consumo normal da rodada.
+     */
+    funcao Risco()
+    {
+        bateria = bateria - PENALIDADE_RISCO
+    }
+
+    /*
+     * Teste temporário das funções de bateria.
+     *
+     * Esta função será removida no próximo commit,
+     * quando for criado o percurso verdadeiro do jogo.
+     */
+    funcao testar_bateria()
+    {
+        escreva("\n========== TESTE DA BATERIA ==========\n\n")
+
+        escreva("Bateria inicial: ", bateria, "\n")
+
+        DiminuirBateria()
+        escreva("Depois de uma rodada: ", bateria, "\n")
+
+        Bonus(5)
+        escreva("Depois do Bonus(5): ", bateria, "\n")
+
+        Bonus(10)
+        escreva("Depois do Bonus(10): ", bateria, "\n")
+
+        Risco()
+        escreva("Depois do Risco(): ", bateria, "\n")
+
+        escreva("Creditos obtidos: ", creditos_obtidos, "\n")
+        escreva("\n======================================\n")
+    }
+
     funcao mostrar_cenario()
     {
         inteiro linha
@@ -299,9 +321,6 @@ programa
         escreva("\n====================================\n")
     }
 
-    /*
-     * Mostra os limites calculados.
-     */
     funcao mostrar_limites_dos_niveis()
     {
         escreva("\n========== LIMITES DOS NIVEIS ==========\n\n")
@@ -359,13 +378,6 @@ programa
         escreva("\n========================================\n")
     }
 
-    /*
-     * Mostra as posições para conferir se os elementos
-     * foram realmente colocados sem sobreposição.
-     *
-     * É somado 1 porque os índices internos vão de
-     * 0 a 24, mas as casas são apresentadas de 1 a 25.
-     */
     funcao mostrar_posicoes_sorteadas()
     {
         escreva("\n========== POSICOES SORTEADAS ==========\n\n")
